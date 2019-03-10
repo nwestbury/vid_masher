@@ -6,3 +6,4 @@ moviepy
 psycopg2
 webvtt-py
 youtube_dl
+gizeh
