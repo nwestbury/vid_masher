@@ -52,14 +52,24 @@ class Database:
         """)
 
         self.conn.commit()
+        cur.close()
 
     def drop(self):
         cur = self.conn.cursor()
         cur.execute("DROP TABLE caption CASCADE")
         cur.execute("DROP TABLE word")
         self.conn.commit()
+        cur.close()
 
-    def insert_caption(self, cur, clip_i, vid_id, start_t, end_t, raw_text, video_path, clip_path):
+    def insert_syn(self, text, video_path, duration):
+        cur = self.conn.cursor()
+
+        cur.execute("SELECT COALESCE(MAX(index), 0) FROM caption WHERE vid_id='syn'")
+        syn_id = cur.fetchone()[0] + 1
+
+        self.insert_caption(cur, syn_id, 'syn', 0, duration, text, video_path, video_path, converted=True, priority=10)
+
+    def insert_caption(self, cur, clip_i, vid_id, start_t, end_t, raw_text, video_path, clip_path, converted=False, priority=100):
         text = clean_caption_text(raw_text)
 
         try:
@@ -69,7 +79,7 @@ class Database:
                 VALUES
                     (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
-            """, (clip_i, vid_id, raw_text, text, clip_path, video_path, False, start_t, end_t, end_t - start_t, 100))
+            """, (clip_i, vid_id, raw_text, text, clip_path, video_path, converted, start_t, end_t, end_t - start_t, priority))
         except psycopg2.IntegrityError:
             self.conn.rollback()
             return
@@ -113,6 +123,48 @@ class Database:
                 i, s, e, raw_text = split
                 clip_path = os.path.join('videos', video_id, "clip{}.mp4".format(i))
                 self.insert_caption(cur, i, video_id, s, e, raw_text, video_file, clip_path)
+
+        cur.close()
+
+    def find_existing_words(self, words):
+        cur = self.conn.cursor()
+        cur.execute('SELECT word FROM word WHERE word IN %s GROUP BY word', (tuple(words), ))
+        data = set(w for w, in cur.fetchall())
+        cur.close()
+
+        return data
+
+    def find_text_range(self, word, caption_index_filters=None, limit=None):
+        cur = self.conn.cursor()
+
+        args = [word]
+        query = 'SELECT * FROM word WHERE word = %s'
+        if caption_index_filters is not None:
+            query += ' AND ('
+            cond = []
+            for cap_id, index in caption_index_filters:
+                cond.append('(caption_id = %s AND index = %s)')
+                args.append(cap_id)
+                args.append(index)
+            query += ' OR '.join(cond) + ')'
+
+        if limit is not None:
+            query += ' LIMIT %s'
+            args.append(limit)
+
+        cur.execute(query, args)
+        data = cur.fetchall()
+
+        cur.close()
+
+        return data
+
+    def find_caption_path(self, caption_id):
+        cur = self.conn.cursor()
+        cur.execute('SELECT clip_path FROM caption WHERE id = %s', (caption_id,))
+        path = cur.fetchone()
+        cur.close()
+        return path[0] if path is not None else None
 
 if __name__ == '__main__':
     import argparse

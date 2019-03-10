@@ -39,6 +39,8 @@ class Synthesizer:
         video_clip.write_videofile(output_path, fps=10)
         os.remove('tmp.mp3')
 
+        return audio_clip.duration
+
 if __name__ == '__main__':
     import argparse
 
