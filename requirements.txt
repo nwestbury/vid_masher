@@ -2,8 +2,10 @@ google-api-python-client
 google-auth
 google-auth-oauthlib
 google-auth-httplib2
+google-cloud-speech
 moviepy
 psycopg2
+pysrt
 webvtt-py
 youtube_dl
 gizeh

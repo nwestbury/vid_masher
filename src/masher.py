@@ -1,4 +1,5 @@
 import logging
+import random
 import os
 
 from database import Database
@@ -34,6 +35,7 @@ class Masher:
         self.logger.debug('Got %s words at first level for %s', len(possible_words), words[start_index])
 
         while possible_words:
+            random.shuffle(possible_words) # prevent the same clip from always being picked
             ranges.append(possible_words)
 
             j += 1
@@ -81,7 +83,7 @@ class Masher:
 
                 if full_clip is not None:
                     skipped_words = words[i:i+full_clip['size']]
-                    self.logger.debug('--> F*** yes! We got lucky, %s skipped (%s)! :)', full_clip['size'], ' '.join(skipped_words))
+                    self.logger.debug('--> We got lucky! %s skipped (%s)! :)', full_clip['size'], ' '.join(skipped_words))
                     actions.append(full_clip)
                     i += full_clip['size']
                 else:
