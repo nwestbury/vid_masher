@@ -24,20 +24,22 @@ class Synthesizer:
         tts = gTTS(text=clean, lang='en')
         tts.save('tmp.mp3')
 
-        audio_clip = mpy.AudioFileClip('tmp.mp3')
+        os.system('ffmpeg -i tmp.mp3 -c:a aac tmp.m4a')
+        audio_clip = mpy.AudioFileClip('tmp.m4a')
 
-        fontsize = 180 if len(word) <= 13 else 100
+        fontsize = 90 if len(word) <= 13 else 50
 
-        surface = gizeh.Surface(1280, 720) # width, height
+        surface = gizeh.Surface(720, 480) # width, height
         text = gizeh.text(clean.capitalize(), fontfamily="Impact", fontsize=fontsize,
-                          fill=(1, 1, 1), xy=(640, 360))
+                          fill=(1, 1, 1), xy=(360, 240))
         text.draw(surface)
         np_image = surface.get_npimage()
 
         video_clip = mpy.VideoClip(lambda t: np_image, duration=audio_clip.duration)
         video_clip = video_clip.set_audio(audio_clip)
-        video_clip.write_videofile(output_path, fps=10)
+        video_clip.write_videofile(output_path, fps=24, audio_codec='aac')
         os.remove('tmp.mp3')
+        os.remove('tmp.m4a')
 
         return audio_clip.duration
 

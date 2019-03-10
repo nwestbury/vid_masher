@@ -159,12 +159,12 @@ class Database:
 
         return data
 
-    def find_caption_path(self, caption_id):
+    def find_caption_info(self, caption_id):
         cur = self.conn.cursor()
-        cur.execute('SELECT clip_path FROM caption WHERE id = %s', (caption_id,))
+        cur.execute('SELECT video_path, start_t, end_t, clip_path FROM caption WHERE id = %s', (caption_id,))
         path = cur.fetchone()
         cur.close()
-        return path[0] if path is not None else None
+        return path
 
 if __name__ == '__main__':
     import argparse

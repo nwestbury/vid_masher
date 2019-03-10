@@ -2,6 +2,7 @@ import logging
 import os
 
 from database import Database
+from splitter import combine_videos, split_video_vtt
 from synthesizer import Synthesizer
 from utils import clean_caption_text
 
@@ -30,7 +31,7 @@ class Masher:
         possible_words = self.db.find_text_range(words[start_index])
         j = start_index
 
-        self.logger.debug('Got %s words at first level', len(possible_words))
+        self.logger.debug('Got %s words at first level for %s', len(possible_words), words[start_index])
 
         while possible_words:
             ranges.append(possible_words)
@@ -79,7 +80,8 @@ class Masher:
                 full_clip = self.lucky_check(word_ranges)
 
                 if full_clip is not None:
-                    self.logger.debug('--> F*** yes! We got lucky, %s skipped! :)', full_clip['size'])
+                    skipped_words = words[i:i+full_clip['size']]
+                    self.logger.debug('--> F*** yes! We got lucky, %s skipped (%s)! :)', full_clip['size'], ' '.join(skipped_words))
                     actions.append(full_clip)
                     i += full_clip['size']
                 else:
@@ -116,11 +118,19 @@ class Masher:
         return clips
 
     def fetch_clip(self, caption_id):
-        print('fetching', caption_id)
-        relative_clip_path = self.db.find_caption_path(caption_id)
-        return os.path.join(self.root_dir, relative_clip_path)
+        self.logger.debug('Fetching %s', caption_id)
+        realtive_video_path, start_t, end_t, relative_clip_path = self.db.find_caption_info(caption_id)
+
+        full_clip_path = os.path.join(self.root_dir, relative_clip_path)
+        if not os.path.isfile(full_clip_path):
+            self.logger.debug('Spliting %s...', caption_id)
+            full_video_path = os.path.join(self.root_dir, realtive_video_path)
+            split_video_vtt(full_video_path, start_t, end_t, full_clip_path)
+
+        return full_clip_path
 
     def acquire_clips(self, actions):
+        self.logger.debug('Acquiring clips for %s actions', len(actions))
         clips = []
         for action in actions:
             if action['name'] == 'sythesize':
@@ -130,13 +140,13 @@ class Masher:
         return clips
 
     def merge_clips(self, clips, output):
-        pass
+        self.logger.debug('Merging %s clips...', len(clips))
+        combine_videos(clips, output)
+        print('Done! :) Check {}'.format(output))
 
     def mash(self, text, output):
         actions = self.generate_action_plan(text)
         clips = self.acquire_clips(actions)
-        print('actions', clips)
-
         self.merge_clips(clips, output)
 
 

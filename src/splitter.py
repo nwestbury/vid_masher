@@ -1,5 +1,6 @@
 import logging
 import multiprocessing as mp
+import moviepy.editor as mop
 import re
 import os
 
@@ -13,6 +14,18 @@ def split_video_vtt(video_file, s, e, clip_path):
     ).format(ss=s, file=video_file, len=e-s, out=clip_path)
 
     os.system(cmd)
+
+
+def combine_videos(video_files, outfile):
+    tmp_files = []
+    for i, video_file in enumerate(video_files):
+        tmp_file = 'tmp{}.ts'.format(i)
+        os.system('ffmpeg -i {} -c copy -bsf:v h264_mp4toannexb -f mpegts {} -hide_banner -loglevel error -y'.format(video_file, tmp_file))
+        tmp_files.append(tmp_file)
+
+    os.system('ffmpeg -i "concat:{}" -c copy -bsf:a aac_adtstoasc {} -hide_banner -loglevel error -y tmp.mp4'.format('|'.join(tmp_files), outfile))
+    os.system('ffmpeg -i tmp.mp4 -vf scale=720:480 -hide_banner -loglevel error -y {}'.format(outfile)) # force the scale to be 720x480
+    os.system('rm tmp.mp4 {}'.format(' '.join(tmp_files)))
 
 class Splitter:
     def __init__(self, debug=False, overwrite=False):
