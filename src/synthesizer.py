@@ -24,7 +24,7 @@ class Synthesizer:
         tts = gTTS(text=clean, lang='en')
         tts.save('tmp.mp3')
 
-        os.system('ffmpeg -i tmp.mp3 -c:a aac tmp.m4a')
+        os.system('ffmpeg -i tmp.mp3 -c:a aac -hide_banner -loglevel error -y tmp.m4a')
         audio_clip = mpy.AudioFileClip('tmp.m4a')
 
         fontsize = 90 if len(word) <= 13 else 50

@@ -85,10 +85,10 @@ class Masher:
                     actions.append(full_clip)
                     i += full_clip['size']
                 else:
-                    self.logger.debug('--> Lots of work ahead for %s clips', word_ranges)
+                    self.logger.debug('--> Lots of work ahead for %s clips', len(word_ranges))
                     actions.append({
-                        'name': 'generate',
-                        'ranges': word_ranges,
+                        'name': 'sythesize', # 'name': 'generate',
+                        'words': words[i:i+len(word_ranges)], # 'ranges': word_ranges,
                     })
                     i += len(word_ranges)
             else:
@@ -108,7 +108,7 @@ class Masher:
         clips = []
         for i in range(0, len(words), 2):
             text = ' '.join(words[i:i+2])
-            video_path = os.path.join('videos', 'syn', '{}.mp4'.format(text))
+            video_path = os.path.join('videos', 'syn', '{}.mp4'.format(text.replace(' ', '_')))
             full_path = os.path.join(self.root_dir, video_path)
 
             print(text, full_path)
