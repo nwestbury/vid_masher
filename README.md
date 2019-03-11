@@ -53,3 +53,8 @@ Populate DB
 ```
 python3 database.py populate
 ```
+
+Using it!!!
+```
+python3 masher.py "let's disrupt the world" --debug
+```

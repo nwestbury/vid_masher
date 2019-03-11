@@ -110,7 +110,7 @@ class Masher:
         clips = []
         for i in range(0, len(words), 2):
             text = ' '.join(words[i:i+2])
-            video_path = os.path.join('videos', 'syn', '{}.mp4'.format(text.replace(' ', '_')))
+            video_path = os.path.join('videos', 'syn', '{}.mp4'.format(text.replace("'", '').replace(' ', '_')))
             full_path = os.path.join(self.root_dir, video_path)
 
             print(text, full_path)
